@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SYN, Syndicate Assistant</title>
+<meta name="description" content="Ask anything about credit, business structure and funding. Straight answers, no sales pitch.">
+<meta property="og:title" content="SYN, Syndicate Assistant">
+<meta property="og:description" content="Ask anything about credit, business structure and funding. Straight answers, no sales pitch.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#040907; --ink2:#07110C; --panel:#0B1710; --panel2:#102218;
+  --line:#16301F; --line2:#1F4530;
+  --text:#E6F3EA; --dim:#84A592; --faint:#5A7868;
+  --green:#35D17E; --green2:#1B9A55; --mint:#6FF0B4;
+  --blue:#5AA9F0; --amber:#E8B341;
+  --glow:rgba(53,209,126,.16);
+  --r:14px;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#EFF4F0; --ink2:#FFFFFF; --panel:#FFFFFF; --panel2:#F1F7F3;
+    --line:#D9E6DD; --line2:#BCD2C4;
+    --text:#0B1810; --dim:#4F655A; --faint:#788D81;
+    --green:#107A3F; --green2:#0C5E30; --mint:#0E8E4A;
+    --blue:#1F6FBF; --amber:#8F6305;
+    --glow:rgba(16,122,63,.10);
+  }
+}
+:root[data-theme="light"]{
+  --ink:#EFF4F0; --ink2:#FFFFFF; --panel:#FFFFFF; --panel2:#F1F7F3;
+  --line:#D9E6DD; --line2:#BCD2C4;
+  --text:#0B1810; --dim:#4F655A; --faint:#788D81;
+  --green:#107A3F; --green2:#0C5E30; --mint:#0E8E4A;
+  --blue:#1F6FBF; --amber:#8F6305;
+  --glow:rgba(16,122,63,.10);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--ink);color:var(--text);
+  font:16px/1.6 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--green)}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:8px}
+
+.app{display:grid;grid-template-columns:272px 1fr;min-height:100%}
+@media (max-width:860px){ .app{grid-template-columns:1fr} .rail{display:none} }
+
+/* ---- rail ---- */
+.rail{
+  border-right:1px solid var(--line);background:var(--ink2);
+  padding:20px 16px 40px;position:sticky;top:0;height:100vh;overflow:auto;
+}
+.railHead{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.mark{width:30px;height:30px;flex:none}
+.railHead b{font:700 17px/1 Sora,sans-serif;letter-spacing:.06em}
+.railHead small{display:block;color:var(--faint);font-size:10.5px;letter-spacing:.14em;margin-top:4px}
+.railSec{margin-top:24px}
+.railSec h4{
+  font:500 10.5px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 9px;
+}
+.railBtn{
+  display:block;width:100%;text-align:left;background:none;border:1px solid transparent;
+  color:var(--dim);border-radius:9px;padding:8px 10px;font:500 13.5px Inter,sans-serif;
+  cursor:pointer;margin-bottom:2px;
+}
+.railBtn:hover{background:var(--panel2);color:var(--text)}
+.railBtn.flow{border-color:var(--line2);color:var(--text);margin-bottom:7px;padding:10px}
+.railBtn.flow span{display:block;color:var(--faint);font-weight:400;font-size:11.5px;margin-top:3px;line-height:1.45}
+
+/* ---- main ---- */
+.main{display:flex;flex-direction:column;min-height:100vh;min-width:0}
+.top{
+  border-bottom:1px solid var(--line);
+  background:radial-gradient(760px 220px at 12% -60%,var(--glow),transparent 70%),var(--ink2);
+  padding:16px 22px;display:flex;align-items:center;gap:14px;
+}
+.coreWrap{width:46px;height:46px;flex:none}
+.topTxt h1{font:700 19px/1.2 Sora,sans-serif;margin:0;letter-spacing:.01em}
+.topTxt p{margin:2px 0 0;color:var(--dim);font-size:12.5px}
+.topBtns{margin-left:auto;display:flex;gap:7px}
+.iconBtn{
+  background:none;border:1px solid var(--line);color:var(--dim);border-radius:999px;
+  padding:7px 12px;font:500 11.5px Inter,sans-serif;cursor:pointer;white-space:nowrap;
+}
+.iconBtn:hover{color:var(--text);border-color:var(--line2)}
+
+.stream{flex:1;overflow:auto;padding:22px 22px 10px}
+.inner{max-width:760px;margin:0 auto}
+
+.msg{margin-bottom:18px;animation:rise .28s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){ .msg{animation:none} }
+
+.you{display:flex;justify-content:flex-end}
+.you span{
+  background:var(--green);color:#03140A;border-radius:14px 14px 4px 14px;
+  padding:9px 14px;font:500 14.5px Inter,sans-serif;max-width:82%;
+}
+.syn{display:flex;gap:11px}
+.synMark{width:26px;height:26px;flex:none;margin-top:3px}
+.bubble{
+  background:var(--panel);border:1px solid var(--line);border-radius:4px 14px 14px 14px;
+  padding:15px 17px;min-width:0;flex:1;
+}
+.bubble h2{font:600 15px/1.35 Sora,sans-serif;margin:0 0 9px;color:var(--mint)}
+.bubble p{margin:0 0 10px}
+.bubble p:last-child{margin-bottom:0}
+.bubble ul,.bubble ol{margin:0 0 10px;padding-left:20px}
+.bubble li{margin-bottom:5px}
+.bubble strong{color:var(--text);font-weight:600}
+.bubble em{color:var(--dim)}
+
+.follow{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+.follow b{font:500 10.5px/1.9 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);width:100%}
+.sug{
+  background:var(--panel2);border:1px solid var(--line2);color:var(--dim);border-radius:999px;
+  padding:7px 13px;font:500 12.5px Inter,sans-serif;cursor:pointer;text-align:left;
+}
+.sug:hover{color:var(--text);border-color:var(--green2)}
+
+/* thinking */
+.dots{display:inline-flex;gap:5px;align-items:center;padding:4px 0}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--green);opacity:.35;animation:bl 1.1s infinite}
+.dots i:nth-child(2){animation-delay:.16s} .dots i:nth-child(3){animation-delay:.32s}
+@keyframes bl{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){ .dots i{animation:none;opacity:.6} }
+
+/* flow */
+.flowCard{border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-top:12px;background:var(--panel2)}
+.flowCard .qn{font:500 10.5px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.flowCard .qt{font:600 15.5px/1.4 Inter,sans-serif;margin:7px 0 12px}
+.opts{display:grid;gap:7px}
+.opt{
+  background:var(--panel);border:1px solid var(--line2);color:var(--text);border-radius:9px;
+  padding:11px 13px;font:500 14px Inter,sans-serif;cursor:pointer;text-align:left;
+}
+.opt:hover{border-color:var(--green);background:var(--panel2)}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--green);transition:width .3s}
+
+.verdict{display:grid;gap:9px;margin-top:4px}
+.vrow{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border-radius:10px;background:var(--panel2);border-left:3px solid var(--line2)}
+.vrow.bad{border-left-color:#E8705A}
+.vrow.mid{border-left-color:var(--amber)}
+.vrow.ok{border-left-color:var(--green)}
+.vrow b{display:block;font:600 13.5px Inter,sans-serif;margin-bottom:3px}
+.vrow p{margin:0;font-size:13.5px;color:var(--dim)}
+
+/* composer */
+.composer{border-top:1px solid var(--line);background:var(--ink2);padding:13px 22px 18px}
+.cInner{max-width:760px;margin:0 auto}
+.quick{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.quick .sug{white-space:nowrap;flex:none}
+.inputRow{display:flex;gap:9px;align-items:flex-end}
+textarea{
+  flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--text);
+  border-radius:12px;padding:12px 14px;font:400 15px/1.45 Inter,sans-serif;
+  resize:none;max-height:140px;min-height:46px;
+}
+textarea::placeholder{color:var(--faint)}
+.send{
+  background:var(--green);color:#03140A;border:none;border-radius:12px;height:46px;
+  padding:0 20px;font:600 14px Inter,sans-serif;cursor:pointer;flex:none;
+}
+.send:hover{background:var(--green2)}
+.disc{margin:10px 0 0;color:var(--faint);font-size:11.5px;line-height:1.5;text-align:center}
+@media (max-width:620px){
+  .top{padding:13px 15px} .stream{padding:16px 15px 6px} .composer{padding:11px 15px 16px}
+  .topTxt p{display:none}
+}
+
+/* core animation */
+.ring{transform-origin:50% 50%;animation:spin 14s linear infinite}
+.ring2{animation:spin 9s linear infinite reverse}
+.core{animation:pulse 2.6s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.55;r:5}50%{opacity:1;r:6.5}}
+.busy .ring{animation-duration:2.2s} .busy .ring2{animation-duration:1.5s}
+@media (prefers-reduced-motion:reduce){ .ring,.ring2,.core{animation:none} }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="synmark">
+  <circle class="ring" cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="1.2"
+          stroke-dasharray="26 10 6 10" opacity=".55"/>
+  <circle class="ring2" cx="24" cy="24" r="14" fill="none" stroke="currentColor" stroke-width="1.2"
+          stroke-dasharray="14 8" opacity=".8"/>
+  <circle class="core" cx="24" cy="24" r="5.5" fill="currentColor"/>
+</g>
+</defs></svg>
+
+<div class="app">
+  <aside class="rail">
+    <div class="railHead">
+      <svg class="mark" viewBox="0 0 48 48" style="color:var(--green)"><use href="#synmark"/></svg>
+      <div><b>SYN</b><small>SYNDICATE ASSISTANT</small></div>
+    </div>
+
+    <div class="railSec">
+      <h4>Run a diagnostic</h4>
+      <div id="flowList"></div>
+    </div>
+
+    <div class="railSec">
+      <h4>Credit</h4>
+      <div id="railCredit"></div>
+    </div>
+    <div class="railSec">
+      <h4>Structure</h4>
+      <div id="railStruct"></div>
+    </div>
+    <div class="railSec">
+      <h4>Funding</h4>
+      <div id="railFund"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <svg class="coreWrap" id="core" viewBox="0 0 48 48" style="color:var(--green)"><use href="#synmark"/></svg>
+      <div class="topTxt">
+        <h1>SYN</h1>
+        <p>Credit, structure and funding. Ask in your own words.</p>
+      </div>
+      <div class="topBtns">
+        <button class="iconBtn" id="themeBtn" type="button">Light</button>
+        <button class="iconBtn" id="resetBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <div class="stream" id="stream"><div class="inner" id="inner"></div></div>
+
+    <div class="composer">
+      <div class="cInner">
+        <div class="quick" id="quick"></div>
+        <div class="inputRow">
+          <textarea id="box" rows="1" placeholder="Ask anything. Why was I denied, how do I build business credit, is this offer a scam..." autocomplete="off"></textarea>
+          <button class="send" id="send" type="button">Ask</button>
+        </div>
+        <p class="disc">SYN answers from a written playbook, not a live AI, so every answer has been checked. General education only, not legal, tax or financial advice, and not a promise that anyone will be approved or funded. Nothing you type leaves your browser.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* SYN knowledge base.
+   No personal or business information about Josh, his company, his clients
+   or his vendors appears anywhere in this file. It is general education
+   about credit, entity structure, business credit and funding. */
+
+const KB = [
+
+/* ---------- PERSONAL CREDIT ---------- */
+{id:"util", t:"Why utilization is the fastest score move you have",
+ k:["utilization","usage","balance","30 percent","ratio","maxed","high balance","credit limit"],
+ a:`<p>Utilization is what percentage of your available credit you are using. It is roughly <strong>30% of a FICO score</strong> and unlike payment history it has <strong>no memory</strong>. Pay a card down today and the score moves as soon as the new balance reports.</p>
+<p>Two numbers matter and most people only watch one:</p>
+<ul><li><strong>Per card.</strong> One card at 90% hurts even when everything else is at zero.</li>
+<li><strong>Overall.</strong> Total balances divided by total limits across all revolving accounts.</li></ul>
+<p>Targets that actually move a score: under 30% is the floor, under 10% is where it gets comfortable, and 1% to 9% on a single card with everything else at zero tends to score highest. Zero across every card is slightly worse than a small reported balance, because the scoring model wants to see you using credit responsibly rather than not at all.</p>
+<p><strong>The trap:</strong> your balance reports on the statement date, not the due date. Paying in full every month and still showing 80% utilization means you are paying after the statement cuts. Pay it down <em>before</em> the statement date and the low number is what gets reported.</p>`,
+ next:["statement","azeo","scorefactors"]},
+
+{id:"statement", t:"Statement date versus due date",
+ k:["statement date","due date","report date","closing date","when does it report","billing cycle"],
+ a:`<p>This one detail costs people more points than almost anything else.</p>
+<p>Your card reports a balance to the bureaus on or around the <strong>statement closing date</strong>. The due date is usually 21 to 25 days later. If you pay in full on the due date, the balance that already got reported was the full statement balance.</p>
+<p>So someone who never carries debt and pays every bill in full can still look like they are running 70% utilization, because that is what was true on the day the snapshot was taken.</p>
+<p><strong>What to do:</strong> find the statement closing date for each card, it is on the statement or in the app. Pay the balance down to your target a few days before that date. Then pay whatever small amount remains by the due date as normal. Same money, different timing, very different reported number.</p>`,
+ next:["util","azeo"]},
+
+{id:"azeo", t:"All Zero Except One",
+ k:["azeo","all zero except one","optimize score","maximize score","before applying"],
+ a:`<p>AZEO is a timing play used in the month before an application. You bring every revolving account to a <strong>zero reported balance</strong> except one, and let that one report a small balance, roughly 1% to 9% of its limit.</p>
+<p>The logic: scoring models count how many accounts carry a balance. Fewer is better. But all zeroes removes the evidence that you are actively using credit, which scores slightly lower than one small balance.</p>
+<p><strong>How to run it:</strong> about a week before each card's statement closing date, pay it to zero. Leave one card, ideally one with a high limit, with a small balance on it. Let that statement cut. Scores update when the new balances report, which is typically within a cycle.</p>
+<p>This is a snapshot tactic, not a lifestyle. It is for the 30 to 60 days before you apply for something that matters.</p>`,
+ next:["statement","util","whenapply"]},
+
+{id:"scorefactors", t:"What actually makes up your score",
+ k:["score factors","fico breakdown","what affects my score","how is my score calculated","percentage"],
+ a:`<p>FICO weights roughly like this:</p>
+<ul>
+<li><strong>Payment history, 35%.</strong> Have you paid on time. One 30 day late can cost serious points and stays seven years.</li>
+<li><strong>Utilization and amounts owed, 30%.</strong> Fixable this month. See the utilization answer.</li>
+<li><strong>Length of credit history, 15%.</strong> Average age of accounts plus the age of your oldest. This is why closing an old card can hurt.</li>
+<li><strong>Credit mix, 10%.</strong> Revolving plus installment scores better than revolving only.</li>
+<li><strong>New credit and inquiries, 10%.</strong> Each hard pull is small, but a cluster in a short window reads as distress.</li>
+</ul>
+<p>Read that list as a work order. The 30% you can change in one billing cycle. The 35% you fix by never being late again starting now. The 15% you fix by waiting, which is why the worst time to close your oldest card is right before you need credit.</p>`,
+ next:["util","inquiries","oldaccounts"]},
+
+{id:"inquiries", t:"How much do hard inquiries really hurt",
+ k:["inquiry","inquiries","hard pull","soft pull","too many inquiries","shopping"],
+ a:`<p>A single hard inquiry typically costs a few points and fades within a year, though it stays visible for two. The damage is rarely the inquiry itself.</p>
+<p>What actually hurts:</p>
+<ul>
+<li><strong>Clusters.</strong> Eight inquiries across four lenders in three weeks reads as someone desperately seeking credit, and underwriters see that pattern before they see your score.</li>
+<li><strong>Inquiries plus new accounts.</strong> Several new accounts on top of several inquiries is the profile most commonly declined for "too many recently opened accounts".</li>
+</ul>
+<p>Rate shopping for a mortgage, car, or student loan is usually bundled into one inquiry when done inside a short window, commonly 14 to 45 days depending on the model. <strong>Credit cards do not get that treatment.</strong> Each card application stands alone.</p>
+<p>Practical rule: decide what you are applying for, apply in one sitting if you are doing several, then stop and let it settle rather than trickling applications out over months.</p>`,
+ next:["denied","whenapply"]},
+
+{id:"oldaccounts", t:"Should I close an old card",
+ k:["close card","closing account","cancel card","old account","annual fee"],
+ a:`<p>Usually no, and the reason is mechanical. Closing a card does two things at once: it removes that card's limit from your total available credit, which pushes utilization up, and eventually it stops contributing to your average account age.</p>
+<p>Closing a card you have had for eleven years to avoid a $95 fee can cost you more in borrowing power than the fee ever did.</p>
+<p><strong>Better moves:</strong> ask the issuer to product change it to a no-fee version of the same card, which usually keeps the account age and the limit. Or keep it open with a small recurring charge and autopay so it does not go dormant and get closed by the issuer.</p>
+<p><strong>When closing is fine:</strong> the card has a fee you genuinely cannot justify, the issuer will not downgrade it, and you are not applying for anything in the next six to twelve months.</p>`,
+ next:["scorefactors","util"]},
+
+{id:"au", t:"Authorized user accounts, the honest version",
+ k:["authorized user","au","piggyback","tradeline","add me as authorized","buy tradelines"],
+ a:`<p>Being added as an authorized user on someone else's seasoned, low-utilization card can import that account's age and payment history onto your report, and it can help.</p>
+<p>What to be clear about:</p>
+<ul>
+<li>It works best when the primary account is <strong>old, never late, and low utilization</strong>. Adding yourself to a maxed out card can make things worse.</li>
+<li>Not every lender counts AU accounts in manual underwriting. Some strip them out entirely when the file is reviewed by a human.</li>
+<li>If the primary holder runs the balance up or misses a payment, that lands on your report too.</li>
+</ul>
+<p><strong>On paid tradelines:</strong> buying an AU slot from a stranger is a real industry and it is also a real risk. Lenders know the pattern, some treat it as misrepresentation, and the gains often evaporate when the account is removed. If someone sells it as a guaranteed score jump, that is a sales claim, not a fact.</p>
+<p>A family member adding you to a genuinely good account is a different thing entirely, and perfectly legitimate.</p>`,
+ next:["scorefactors","scams"]},
+
+/* ---------- DISPUTES AND REPAIR ---------- */
+{id:"disputes", t:"What disputing can and cannot do",
+ k:["dispute","disputing","remove","delete","collection","charge off","late payment","repair","fcra"],
+ a:`<p>Under the Fair Credit Reporting Act you have the right to dispute anything on your report that is <strong>inaccurate, incomplete, or unverifiable</strong>. The bureau generally has 30 days to investigate, and if the furnisher cannot verify the item it has to come off.</p>
+<p>That is the real mechanism, and it is powerful when there is genuinely something wrong. Mixed files, accounts that were never yours, balances that are incorrect, dates that are wrong, accounts still showing open that were settled, duplicates of the same debt sold between collectors.</p>
+<p><strong>What it is not:</strong> disputing accurate information does not make it disappear. An item that is correct, verifiable, and within the reporting window is likely to be verified and stay. Anyone who tells you every negative item can be removed regardless of accuracy is describing a sales pitch.</p>
+<p><strong>Reporting windows:</strong> most negatives fall off after seven years. Chapter 7 bankruptcy runs ten.</p>
+<p>Your leverage is accuracy. Pull all three reports, read them line by line, and build your dispute around the specific thing that is wrong rather than a blanket objection.</p>`,
+ next:["pullreports","rebuild","scams"]},
+
+{id:"pullreports", t:"Getting your actual reports, not just a score",
+ k:["pull report","credit report","annualcreditreport","three bureaus","check my credit","monitoring"],
+ a:`<p>A score app shows you a number. A report shows you the data the number is calculated from, which is what you actually need to work with.</p>
+<p>You are entitled to free reports from all three bureaus through the federally authorized site, <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">annualcreditreport.com</a>. That is the official one, it is free, and it does not need a card.</p>
+<p><strong>Pull all three.</strong> Experian, Equifax and TransUnion do not carry identical data. A collection can sit on one and not the others. Lenders pull different bureaus depending on who they are and where you are.</p>
+<p>When you have them, go line by line and note: account name, open date, balance, limit, status, date of last activity, and whether anything is duplicated. That list is the raw material for everything else you do.</p>`,
+ next:["disputes","scorefactors"]},
+
+{id:"rebuild", t:"Rebuilding while you are still repairing",
+ k:["rebuild","rebuilding","secured card","builder loan","start over","no credit","thin file"],
+ a:`<p>Repair and rebuild are two different jobs and they run at the same time. Removing bad data does not create good data. If you clean a file and there is nothing positive underneath, you end up with an empty report, which lenders also decline.</p>
+<p>What builds a file from thin or damaged:</p>
+<ul>
+<li><strong>A secured card.</strong> You put down a deposit, it becomes your limit, and it reports like a normal card. Keep it under 10% and pay on time. Choose one that reports to all three bureaus and has a path to graduate to unsecured.</li>
+<li><strong>A credit builder loan.</strong> The money sits in an account while you make payments, and the payment history reports. It adds installment history, which helps credit mix.</li>
+<li><strong>Becoming an authorized user</strong> on a strong, seasoned account held by someone who will not run it up.</li>
+<li><strong>Time.</strong> Unglamorous and unavoidable. Accounts have to age.</li>
+</ul>
+<p>Two to three well-managed accounts reporting on time for six to twelve months changes a file more than almost anything else available to you.</p>`,
+ next:["disputes","thinfile","entity"]},
+
+{id:"thinfile", t:"Thin file, and why good payers still get declined",
+ k:["thin file","not enough credit","no history","declined no history","insufficient"],
+ a:`<p>A thin file is a report with too few accounts, or accounts too young, for a lender to judge you. It is a common reason for decline among people who have never missed a payment in their life.</p>
+<p>The fix is not a better score. It is more data. Roughly what underwriters want to see:</p>
+<ul>
+<li><strong>Three or more revolving accounts</strong> reporting</li>
+<li><strong>Two years</strong> of history on at least some of them</li>
+<li>A mix of <strong>revolving and installment</strong></li>
+<li>Nothing recently opened in a cluster</li>
+</ul>
+<p>Build toward that deliberately. Open what you need, then leave it alone and let it age, because every new account resets your average age downward before it starts helping.</p>`,
+ next:["rebuild","whenapply"]},
+
+/* ---------- ENTITY AND STRUCTURE ---------- */
+{id:"entity", t:"Setting the business up so it is fundable",
+ k:["entity","llc","corporation","structure","set up business","formation","fundable","foundation"],
+ a:`<p>Business lenders and credit issuers check a predictable list before they look at anything else. Missing items get you declined before a human reads your application.</p>
+<p>The foundation, in the order it is usually checked:</p>
+<ul>
+<li><strong>A registered entity</strong> in good standing with your state. An LLC or corporation, not a sole proprietorship, if you want credit in the business name.</li>
+<li><strong>An EIN</strong> from the IRS. Free, takes minutes, do not pay anyone for it.</li>
+<li><strong>A business bank account</strong> in the exact legal name, opened with the EIN.</li>
+<li><strong>A real business address.</strong> Not a PO box. Underwriters flag those.</li>
+<li><strong>A business phone number</strong> listed and reachable, ideally listed in directory assistance.</li>
+<li><strong>A business email on your own domain.</strong> A gmail address in the application is a small thing that reads badly.</li>
+<li><strong>A website</strong> that exists and describes what you do.</li>
+<li><strong>Matching NAICS and SIC codes</strong> that are not in a restricted industry.</li>
+</ul>
+<p>Every one of those should say exactly the same business name, address and phone, character for character, everywhere it appears. Mismatches between your state filing, your bank, and your credit profile cause more declines than people expect.</p>`,
+ next:["naics","businesscredit","duns"]},
+
+{id:"naics", t:"Industry codes and restricted industries",
+ k:["naics","sic","industry code","restricted industry","high risk industry","classification"],
+ a:`<p>Your NAICS and SIC codes tell a lender what business you are in. Some codes land you in a restricted or high risk category and get you auto-declined regardless of your credit.</p>
+<p>Categories commonly restricted by banks and card issuers include gambling, adult content, firearms, cannabis, crypto trading, money services, collections agencies, travel agencies, auto dealers, and a varying list of others. Policies differ by lender and they change.</p>
+<p><strong>Important and often misunderstood:</strong> pick the code that honestly describes what you actually do. Choosing a false code to get around a restriction is misrepresentation on a credit application, and that is a far bigger problem than a decline.</p>
+<p>If your real industry is restricted, the answer is finding lenders who serve it, not disguising it.</p>`,
+ next:["entity","underwriting"]},
+
+{id:"duns", t:"D-U-N-S number and the business bureaus",
+ k:["duns","d-u-n-s","dun and bradstreet","paydex","experian business","equifax business","business report"],
+ a:`<p>Business credit runs through different bureaus than personal credit, and you often have to go start the file yourself rather than waiting for it to appear.</p>
+<ul>
+<li><strong>Dun &amp; Bradstreet.</strong> Issues the D-U-N-S number, which is free to request. Its main score is PAYDEX, running 0 to 100 and based almost entirely on whether you pay suppliers on time or early. Paying on the due date scores around 80. Paying early scores higher.</li>
+<li><strong>Experian Business.</strong> Builds a file automatically once there is activity. Uses Intelliscore.</li>
+<li><strong>Equifax Business.</strong> Same idea, its own score.</li>
+</ul>
+<p>Check what each bureau already has on you before you apply anywhere. Files get created from public records and can contain errors, an old address, a wrong industry code, or a different company entirely with a similar name.</p>`,
+ next:["businesscredit","net30"]},
+
+{id:"businesscredit", t:"How business credit actually gets built",
+ k:["business credit","build business credit","tiers","vendor credit","trade lines","net 30"],
+ a:`<p>Business credit is built in stages because each stage qualifies you for the next. Skipping ahead is the usual reason people get declined and conclude the whole thing does not work.</p>
+<p><strong>Stage one, vendor accounts.</strong> Suppliers who extend Net 30 terms with little or no credit check. You buy things the business actually needs, pay early, and they report to the business bureaus. You need a handful of these reporting before anything else opens up.</p>
+<p><strong>Stage two, retail and fleet accounts.</strong> Store cards and fuel cards tied to the business once there are trade references on file.</p>
+<p><strong>Stage three, business credit cards.</strong> Most still require a personal guarantee at this point. That is normal.</p>
+<p><strong>Stage four, bank products.</strong> Lines of credit and term loans, which look at revenue and bank statements as much as credit.</p>
+<p>The lever almost nobody uses properly: <strong>pay early, not on time.</strong> PAYDEX rewards early payment specifically. Paying a Net 30 invoice on day 10 builds a stronger profile than paying it on day 30, for the same money.</p>`,
+ next:["net30","duns","pg"]},
+
+{id:"net30", t:"What to look for in a vendor account",
+ k:["net 30","vendor account","starter vendor","tier 1","supplier","reports to bureaus"],
+ a:`<p>Not every Net 30 account is worth opening. The only ones that matter are the ones that <strong>report</strong>.</p>
+<p>Before you open one, confirm:</p>
+<ul>
+<li><strong>Which bureaus it reports to</strong>, and how often. An account that reports to nobody is just a bill.</li>
+<li><strong>Whether it needs a personal guarantee or a personal credit check.</strong> Starter accounts usually do not.</li>
+<li><strong>What it requires</strong>, typically an EIN, a business bank account, a matching address and phone, and sometimes a minimum time in business.</li>
+<li><strong>Whether you actually need what they sell.</strong> Buying things you have no use for to build a score is an expensive way to build a score.</li>
+</ul>
+<p>Open them a few at a time rather than all at once, use them for real purchases, and pay early. Three to five reporting accounts with clean early-payment history is the realistic entry point to the next tier.</p>`,
+ next:["businesscredit","duns"]},
+
+{id:"pg", t:"Personal guarantees, and why nearly everything has one",
+ k:["personal guarantee","pg","no pg","without personal guarantee","ein only","liability"],
+ a:`<p>A personal guarantee means you are personally liable if the business cannot pay. If the business defaults, the lender can come after you.</p>
+<p>Almost all business credit for small and young companies carries one. That is not a trick, it is the lender pricing the risk of a company with no track record.</p>
+<p><strong>What usually gets you to no personal guarantee:</strong> meaningful time in business, often two years or more, real revenue, an established business credit profile, and frequently a corporate structure rather than a single member LLC. Some vendor accounts and fuel cards are EIN-only early on, but those are small limits.</p>
+<p>Be skeptical of anyone selling "no PG funding" to a brand new business as a general product. The honest version is that you build toward it over a couple of years, and the early steps involve a guarantee.</p>`,
+ next:["businesscredit","scams","underwriting"]},
+
+/* ---------- FUNDING ---------- */
+{id:"fundingtypes", t:"The main ways a small business gets capital",
+ k:["funding","capital","loan","financing","options","money","get funded","types of funding"],
+ a:`<p>Treat these as different tools, not a ranking. The right one depends on what you need the money for and how fast it has to come back.</p>
+<ul>
+<li><strong>Business credit cards.</strong> Fast, revolving, often 0% for an intro period. Best for short term expenses you can clear inside the promo.</li>
+<li><strong>Business line of credit.</strong> Draw what you need, pay interest on what you drew. Good for uneven cash flow.</li>
+<li><strong>Term loan.</strong> Lump sum, fixed payments. Good for a defined purchase with a known payback.</li>
+<li><strong>SBA loans.</strong> Government guaranteed, the cheapest money most small businesses can realistically get. Slow and paperwork heavy.</li>
+<li><strong>Equipment financing.</strong> The equipment is the collateral, so approval leans on the asset rather than purely on you.</li>
+<li><strong>Invoice factoring.</strong> Sell unpaid invoices at a discount for cash now. Expensive, but it solves a specific timing problem.</li>
+<li><strong>Revenue based financing and merchant cash advances.</strong> Fast and easy to get, and usually the most expensive money in the room. Read the warning on those before signing anything.</li>
+<li><strong>Grants.</strong> Free money, highly competitive, small amounts for most businesses.</li>
+</ul>`,
+ next:["sba","mca","grants","underwriting"]},
+
+{id:"sba", t:"SBA loans in plain terms",
+ k:["sba","7a","504","microloan","government loan","sba loan"],
+ a:`<p>The SBA does not usually lend to you directly. It guarantees a portion of a loan made by a bank, which lowers the bank's risk and gets you better terms than you would otherwise be offered.</p>
+<ul>
+<li><strong>7(a).</strong> The main program. Working capital, equipment, refinancing, buying a business. Up to $5 million.</li>
+<li><strong>504.</strong> For major fixed assets, real estate and heavy equipment, through a Certified Development Company.</li>
+<li><strong>Microloan.</strong> Up to $50,000, delivered through nonprofit intermediaries. Far more accessible for a newer business, and often comes with free advising attached.</li>
+</ul>
+<p><strong>Expect to provide:</strong> business and personal tax returns, financial statements, a debt schedule, bank statements, a business plan, and a personal guarantee from anyone owning 20% or more.</p>
+<p>It is slower than online lenders by a wide margin. It is also dramatically cheaper. If the money is for something that will still matter in two months, the wait usually pays for itself.</p>
+<p>Start at your local SBA district office or an SBDC. Both are free.</p>`,
+ next:["fundingtypes","underwriting","docs"]},
+
+{id:"mca", t:"Merchant cash advances, read this before signing",
+ k:["mca","merchant cash advance","daily payments","factor rate","revenue based","quick funding","stacking"],
+ a:`<p>A merchant cash advance is not a loan. You sell a slice of future receivables at a discount, and repayment comes out daily or weekly, often as a fixed debit or a percentage of card sales.</p>
+<p><strong>The part that catches people:</strong> MCAs are quoted as a factor rate, not an interest rate. A 1.4 factor on $50,000 means you repay $70,000. Because it comes back over a few months rather than a year, the effective annualized cost is frequently in the triple digits. A factor rate is not comparable to an APR and should never be compared to one directly.</p>
+<p><strong>Where it turns dangerous:</strong> taking a second advance to cover the first. Stacking is how a cash flow problem becomes a closure. Once two or three daily debits are hitting the account, there is often no revenue level that fixes it.</p>
+<p>There are narrow cases where an advance makes sense, usually a short, certain, high-margin opportunity you can pay back in weeks. Outside that, exhaust every other option first.</p>
+<p>Before signing anything, calculate the <strong>total dollars repaid</strong>, not the rate, and ask what happens if revenue drops.</p>`,
+ next:["fundingtypes","scams","underwriting"]},
+
+{id:"underwriting", t:"What an underwriter is actually looking at",
+ k:["underwriting","underwriter","approval","what do lenders look at","criteria","requirements","qualify"],
+ a:`<p>Most small business lenders are checking the same short list. Knowing it lets you fix the weak item before you apply instead of after you are declined.</p>
+<ul>
+<li><strong>Time in business.</strong> Six months is the floor for many online lenders. Two years opens most doors. Under six months, your options are narrow and expensive.</li>
+<li><strong>Revenue, and its consistency.</strong> Many have a monthly minimum. Steady beats large and erratic.</li>
+<li><strong>Bank statements, usually the last three to six months.</strong> They are reading for average daily balance, how many days you went negative, NSF fees, and whether deposits match the revenue you claimed.</li>
+<li><strong>Personal credit of the owner.</strong> Still central for small business lending, whatever the business profile looks like.</li>
+<li><strong>Existing debt.</strong> Other loans, other advances, and anything already debiting the account daily.</li>
+<li><strong>Industry code.</strong> Restricted industries get declined on that alone.</li>
+</ul>
+<p><strong>Negative days and NSFs are the quiet killer.</strong> Three overdrafts in the last ninety days will sink an application that looks fine on every other measure. If you are planning to apply, clean up the account activity first and let a few good months report.</p>`,
+ next:["docs","denied","naics"]},
+
+{id:"docs", t:"The document pack to have ready before you apply",
+ k:["documents","paperwork","what do i need","application","prepare","docs"],
+ a:`<p>Having this assembled before you start turns a two week back-and-forth into a same-week decision, and it signals competence to whoever is reading the file.</p>
+<ul>
+<li>Entity formation documents and proof of good standing with the state</li>
+<li>EIN letter from the IRS</li>
+<li>Business bank statements, the last three to six months, all pages</li>
+<li>Business tax returns, usually two years where they exist</li>
+<li>Personal tax returns for any owner at 20% or more</li>
+<li>A profit and loss statement and a balance sheet, current</li>
+<li>A debt schedule listing every existing obligation and its monthly payment</li>
+<li>Government photo ID and your voided business check</li>
+<li>A short, specific use of funds statement</li>
+</ul>
+<p>Keep it in one folder, named clearly, as PDFs. When a lender asks for something and gets it in an hour, your file moves to the front.</p>`,
+ next:["underwriting","sba"]},
+
+{id:"denied", t:"You got declined. Now what.",
+ k:["denied","declined","rejected","turned down","why was i denied","get denied","was denied","adverse action","decline letter"],
+ a:`<p>A decline is information, and the law requires them to hand it to you.</p>
+<p><strong>Get the adverse action notice.</strong> Under the Equal Credit Opportunity Act a lender has to tell you the specific reasons, or tell you how to request them. That letter names the actual problem instead of leaving you guessing.</p>
+<p>The usual reasons and what each one really means:</p>
+<ul>
+<li><strong>"Too many recent inquiries or new accounts."</strong> Stop applying. Let it age three to six months.</li>
+<li><strong>"Insufficient credit history."</strong> Thin file. You need more accounts reporting, not a higher score.</li>
+<li><strong>"High balances on revolving accounts."</strong> Utilization. Fixable this cycle.</li>
+<li><strong>"Time in business."</strong> Nothing to fix but the calendar. Look at lenders with lower thresholds.</li>
+<li><strong>"Industry not supported."</strong> Your NAICS code. Find a lender who serves it.</li>
+<li><strong>"Insufficient revenue or inconsistent deposits."</strong> They read your bank statements and did not like what they saw.</li>
+</ul>
+<p><strong>Do not immediately reapply elsewhere.</strong> That is the single most common mistake after a decline, and it adds inquiries to a file that was already the problem. Fix the named reason first.</p>`,
+ next:["underwriting","inquiries","whenapply"]},
+
+{id:"whenapply", t:"Timing an application properly",
+ k:["when to apply","timing","ready to apply","best time","prepare to apply","how soon can i apply"],
+ a:`<p>Applications are won in the sixty days before you submit anything.</p>
+<p><strong>Sixty days out:</strong> pull all three personal reports and your business bureau files. Dispute anything genuinely inaccurate, since investigations take about 30 days. Stop opening anything new.</p>
+<p><strong>Thirty days out:</strong> bring utilization down and time the paydowns to land before each statement closing date. Make sure the business bank account shows no negative days and no NSFs. Confirm your name, address, phone and industry code match across your state filing, your bank, your website and your bureau files.</p>
+<p><strong>Two weeks out:</strong> assemble the document pack. Write the use of funds statement.</p>
+<p><strong>Application week:</strong> apply to your realistic targets in one concentrated window rather than spreading applications across months, and stop when you have what you need.</p>
+<p>If any of those steps surfaces a problem, delaying by a month is almost always cheaper than being declined and carrying the inquiry.</p>`,
+ next:["azeo","docs","underwriting"]},
+
+{id:"grants", t:"Grants, and what they realistically are",
+ k:["grant","grants","free money","grant money","apply for grants"],
+ a:`<p>Grants are real and they are worth applying for. They are also competitive, usually smaller than people imagine, and almost never a replacement for financing.</p>
+<p>Two things to be clear about:</p>
+<ul>
+<li><strong>The federal government does not hand out general grants to start or grow an ordinary business.</strong> The SBA says so directly. Federal grant money is tied to specific programs, mostly research, conservation, exports and specialised sectors.</li>
+<li><strong>The realistic money for most members is private and corporate.</strong> Programs between $500 and $10,000, with simple eligibility and short applications, many of which reset every month.</li>
+</ul>
+<p>That last point is the strategy. A monthly program means one well-written application can be submitted repeatedly. People who win grants are rarely better writers, they are the ones who applied twelve times instead of once.</p>
+<p>The Grant Desk in the Grant Tracker section has every open program with live deadlines, eligibility filters and a tracker. That is the tool to work from.</p>`,
+ next:["fundingtypes","scams"]},
+
+/* ---------- RISK ---------- */
+{id:"scams", t:"How to spot a funding scam",
+ k:["scam","fraud","too good to be true","guaranteed approval","upfront fee","red flag","shady"],
+ a:`<p>This industry attracts predators because the people in it are under pressure. The tells are consistent.</p>
+<p><strong>Walk away immediately if:</strong></p>
+<ul>
+<li>Approval is <strong>guaranteed</strong> before anyone has looked at a document. Nobody can guarantee an underwriting outcome.</li>
+<li>A <strong>large fee is demanded up front</strong> to secure funding that has not been approved.</li>
+<li>They want your <strong>online banking username and password</strong> rather than read-only verification or statements.</li>
+<li>They tell you to put <strong>false information</strong> on an application, inflate revenue, or use an industry code that is not yours. That is fraud, and it is your signature on it.</li>
+<li>They promise to <strong>remove accurate negative items</strong> from your credit report.</li>
+<li>They sell a <strong>CPN or a new credit identity</strong>. These are usually stolen Social Security numbers. Using one is a federal crime.</li>
+<li>There is <strong>urgency with no reason</strong>, an offer expiring today, a slot about to be taken.</li>
+</ul>
+<p>Legitimate costs exist. A real lender charges origination at closing, not a wire transfer before approval. A real advisor charges for work done.</p>
+<p>If you are unsure about an offer, post the details in this space with the name removed and let the room look at it. Someone has usually seen it before.</p>`,
+ next:["mca","disputes","pg"]},
+
+{id:"mixing", t:"Keep business and personal money separate",
+ k:["commingling","separate","personal account","business account","mixing funds","piercing the veil"],
+ a:`<p>Running business income through a personal account, or paying personal bills from the business account, causes three separate problems at once.</p>
+<ul>
+<li><strong>Funding.</strong> Underwriters read bank statements. A business account full of personal transactions makes revenue impossible to verify, and unverifiable revenue gets declined.</li>
+<li><strong>Liability.</strong> The protection an LLC or corporation gives you depends on it being a genuinely separate entity. Commingling funds is the classic argument for piercing the corporate veil and reaching your personal assets.</li>
+<li><strong>Tax.</strong> Deductions you cannot substantiate are deductions you lose, and the reconstruction work costs more than the discipline would have.</li>
+</ul>
+<p>The fix is boring and works: one business account, one business card, everything business runs through them, and you pay yourself with a clean transfer on a schedule.</p>`,
+ next:["entity","underwriting"]},
+
+/* ---------- MINDSET AND OPERATIONS ---------- */
+{id:"order", t:"What order should I actually do this in",
+ k:["where do i start","where do i even start","getting started","start","begin","order","first step","step one","roadmap","plan","what first","beginning","what should i do first"],
+ a:`<p>Most people run these in the wrong order and stall. The sequence that works:</p>
+<p><strong>1. See the real picture.</strong> Pull all three personal reports. List every negative item and every account with its limit, balance and open date. You cannot plan around data you have not looked at.</p>
+<p><strong>2. Stop the bleeding.</strong> Everything current, autopay on everything, no new applications.</p>
+<p><strong>3. Fix what is inaccurate, build what is missing.</strong> Dispute genuine errors. At the same time add positive accounts, because a clean empty file still gets declined.</p>
+<p><strong>4. Build the business foundation.</strong> Entity, EIN, bank account, address, phone, website, matching codes. This runs in parallel and costs almost nothing but attention.</p>
+<p><strong>5. Open vendor accounts that report.</strong> Pay early. Let them season.</p>
+<p><strong>6. Optimize the thirty days before you apply.</strong> Utilization timing, clean bank statements, document pack ready.</p>
+<p><strong>7. Apply deliberately, in one window.</strong></p>
+<p>Steps 3 and 4 run at the same time. That overlap is what separates a six month timeline from an eighteen month one.</p>`,
+ next:["rebuild","entity","whenapply"]},
+
+{id:"timeline", t:"How long does this take, honestly",
+ k:["how long","timeline","how fast","time","realistic","when will i"],
+ a:`<p>Nobody can give you a date, and anybody who does is selling. What can be described is how fast each mechanism moves.</p>
+<ul>
+<li><strong>Utilization changes:</strong> one billing cycle. This is the only genuinely fast lever.</li>
+<li><strong>Dispute investigations:</strong> about 30 days per round, and rounds can repeat.</li>
+<li><strong>A new account starting to help:</strong> it reports in a month, but it drags your average age down first and starts helping after roughly six months.</li>
+<li><strong>Vendor accounts seasoning into the next tier:</strong> commonly three to six months of reporting.</li>
+<li><strong>Business entity foundation:</strong> days to weeks, mostly waiting on the state.</li>
+<li><strong>Time in business thresholds:</strong> six months and two years, and no action speeds those up.</li>
+</ul>
+<p>The honest read is that a damaged file with nothing positive underneath is a longer project than a clean thin file. Both are fixable. Neither is fixed in thirty days, whatever an advert says.</p>`,
+ next:["order","rebuild"]},
+
+{id:"useoffunds", t:"Writing a use of funds that gets taken seriously",
+ k:["use of funds","what will you use it for","purpose","business plan","proposal"],
+ a:`<p>Lenders and grant committees read a lot of these. The weak ones say "working capital and marketing". The strong ones answer three questions in order.</p>
+<p><strong>1. What exactly are you buying.</strong> Itemised, with quantities and real prices from real quotes. Not "equipment", but the specific machine, the model, the supplier, the price.</p>
+<p><strong>2. What that produces.</strong> The measurable result. More units made, more jobs completed per week, a cost removed, a bottleneck cleared. A number, not an adjective.</p>
+<p><strong>3. How it gets repaid.</strong> The line from the result to the cash that services the debt. This is the part most applications skip and the part underwriters care about most.</p>
+<p>Keep the totals matching the amount requested exactly. If you ask for $50,000 and the itemised list adds to $43,200, you have told them you have not thought it through.</p>`,
+ next:["docs","grants","sba"]},
+
+{id:"askroom", t:"How to ask a question here and get a real answer",
+ k:["how to ask","post","question","help me","etiquette","community"],
+ a:`<p>The quality of the answer you get is set by the question you ask. A good one here looks like this:</p>
+<ul>
+<li><strong>The situation in numbers.</strong> Scores, utilization, time in business, revenue range, what is already open. Approximate is fine. Vague is not.</li>
+<li><strong>What you already tried</strong>, and what happened.</li>
+<li><strong>The specific decision you are stuck on.</strong></li>
+</ul>
+<p>"Why did I get denied" gets you guesses. "Denied for a business card, adverse action said too many recent inquiries, I have five in the last four months, two cards at 60% utilization, eighteen months in business, should I wait or fix utilization first" gets you an answer you can act on.</p>
+<p><strong>Never post</strong> your full Social Security number, account numbers, date of birth, or screenshots with those visible. Crop them out. This room is large and you do not know everyone in it.</p>`,
+ next:["denied","order"]},
+
+{id:"scoreranges", t:"What the score bands actually unlock",
+ k:["score range","what score do i need","700","650","750","good credit","excellent"],
+ a:`<p>Rough bands, and these vary by lender and product:</p>
+<ul>
+<li><strong>Below 580.</strong> Secured products and subprime. Focus on rebuilding, not applying.</li>
+<li><strong>580 to 669.</strong> Approvals exist but pricing is poor. Some online business lenders start here.</li>
+<li><strong>670 to 739.</strong> Most mainstream business cards and many bank products come into range.</li>
+<li><strong>740 to 799.</strong> Good pricing, higher limits, most doors open.</li>
+<li><strong>800 plus.</strong> Marginal gains over 760 for most purposes.</li>
+</ul>
+<p><strong>The caveat that matters more than the bands:</strong> a 760 on a thin file with four recent inquiries can be declined where a 690 on a deep, clean, well-aged file is approved. Lenders read the whole report. The number is a summary, not the decision.</p>
+<p>Chasing a number past roughly 760 is usually wasted effort. Depth, age and clean recent activity are what is left to work on.</p>`,
+ next:["thinfile","underwriting","util"]}
+];
+
+/* Guided diagnostics. Each step asks one thing, scores the answers, and
+   produces a prioritised readout. No data leaves the browser. */
+const FLOWS = [
+{id:"fundable", t:"Am I fundable right now?",
+ blurb:"Eight questions. Tells you the single thing most likely to get you declined, and what to do about it.",
+ q:[
+  {q:"How long has the business been operating?",
+   a:[{t:"Not trading yet",v:0},{t:"Under 6 months",v:1},{t:"6 to 24 months",v:2},{t:"Over 2 years",v:3}],
+   f:{0:"Pre-revenue is the hardest place to borrow from. Your realistic routes are personal credit, grants, and a microloan. Build the entity foundation now so you are ready the moment revenue starts.",
+      1:"Under six months rules out most lenders. Work on the foundation and vendor accounts, and revisit at the six month mark.",
+      2:"You are past the first gate. Many online lenders and most business cards are reachable.",
+      3:"Time in business is not your constraint. Bank products and SBA are realistically on the table."}},
+  {q:"Is there a registered entity with an EIN and a business bank account?",
+   a:[{t:"None of that yet",v:0},{t:"Some of it",v:1},{t:"All three, in matching names",v:3}],
+   f:{0:"This is the first thing to fix and it is mostly free. Without an entity, an EIN and a business bank account there is no business credit profile to build on.",
+      1:"Close the gaps. All three need to exist and carry the exact same legal name and address.",
+      3:"Foundation is in place."}},
+  {q:"Does your business name, address and phone match everywhere: state filing, bank, website, bureaus?",
+   a:[{t:"Not sure",v:0},{t:"Mostly, with some differences",v:1},{t:"Identical everywhere",v:3}],
+   f:{0:"Go and check. Mismatches cause declines that look mysterious because nobody tells you that was the reason.",
+      1:"Make them identical, character for character. Abbreviations and suite numbers count.",
+      3:"Good. This is a common silent failure and you have avoided it."}},
+  {q:"Highest utilization on any single revolving account?",
+   a:[{t:"Over 70%",v:0},{t:"30 to 70%",v:1},{t:"Under 30%",v:2},{t:"Under 10%",v:3}],
+   f:{0:"This is probably costing you more points than anything else on your report, and it is the fastest thing to fix. Pay down before the statement closing date, not the due date.",
+      1:"Worth bringing under 30%, ideally under 10% in the month before you apply.",
+      2:"Acceptable. Tighten to under 10% in the thirty days before an application.",
+      3:"Where you want to be."}},
+  {q:"Hard inquiries in the last six months?",
+   a:[{t:"Six or more",v:0},{t:"Three to five",v:1},{t:"One or two",v:2},{t:"None",v:3}],
+   f:{0:"Stop applying. A cluster this size is read as distress and will sink otherwise good applications. Let it age three to six months.",
+      1:"Enough to matter. Avoid new applications until you have fixed everything else.",
+      2:"Not a problem.",
+      3:"Clean."}},
+  {q:"Negative balance days or NSF fees on the business account in the last 90 days?",
+   a:[{t:"Several",v:0},{t:"One or two",v:1},{t:"None",v:3}],
+   f:{0:"This is the quiet killer. Underwriters read your bank statements line by line and several overdrafts will decline a file that is strong everywhere else. Get three clean months before applying.",
+      1:"Clean it up and let a few good months report before you apply.",
+      3:"Good. This matters more than most people realise."}},
+  {q:"Any vendor or trade accounts reporting to the business bureaus?",
+   a:[{t:"None",v:0},{t:"One or two",v:1},{t:"Three or more, paid early",v:3}],
+   f:{0:"Start here. A handful of reporting vendor accounts, paid early, is what unlocks the next tier.",
+      1:"On the way. Aim for three to five reporting, and pay early rather than on time.",
+      3:"Your business profile is doing its job."}},
+  {q:"Could you produce six months of bank statements, two years of returns and a current P&L this week?",
+   a:[{t:"No",v:0},{t:"With some scrambling",v:1},{t:"Yes, today",v:3}],
+   f:{0:"Assemble the document pack before you apply anywhere. Missing paperwork stalls files and stalled files get declined.",
+      1:"Get it into one folder as named PDFs now, while there is no deadline.",
+      3:"You will move faster than most applicants."}}
+ ]},
+
+{id:"denied", t:"Why did I get declined?",
+ blurb:"Five questions. Reads the reason behind the reason and tells you what to fix first.",
+ q:[
+  {q:"What did the adverse action letter say?",
+   a:[{t:"Did not get one",v:0},{t:"Too many inquiries or new accounts",v:1},{t:"Insufficient credit history",v:1},{t:"High balances",v:2},{t:"Time in business or revenue",v:2},{t:"Industry not supported",v:0}],
+   f:{0:"Request it. The lender has to give you the specific reasons under the Equal Credit Opportunity Act, and that letter saves you months of guessing.",
+      1:"This is a file depth and recency problem, not a score problem. More applications will make it worse.",
+      2:"This one is mechanical and fixable. Work the specific number they named."}},
+  {q:"How many places did you apply to in the last 60 days?",
+   a:[{t:"More than five",v:0},{t:"Two to five",v:1},{t:"Just this one",v:3}],
+   f:{0:"Stop now. Every additional application is compounding the exact thing that is getting you declined.",
+      1:"Pause before applying anywhere else. Fix the named reason first.",
+      3:"Good. One decline is information, not a pattern."}},
+  {q:"Did you apply in the business name, personally, or both?",
+   a:[{t:"Business only",v:1},{t:"Personally",v:1},{t:"Not sure",v:0}],
+   f:{0:"Worth knowing, because it determines which report to fix.",
+      1:"Noted. Most small business credit looks at the owner's personal credit either way."}},
+  {q:"Was your industry code on the application the one that genuinely describes what you do?",
+   a:[{t:"Not sure what code was used",v:0},{t:"Yes",v:3}],
+   f:{0:"Find out. A restricted industry code declines an application on its own, regardless of everything else. Never change it to something untrue, find a lender who serves your actual industry instead.",
+      3:"Then industry is not your problem."}},
+  {q:"Since the decline, have you changed anything?",
+   a:[{t:"Applied somewhere else",v:0},{t:"Nothing yet",v:1},{t:"Fixed the named reason",v:3}],
+   f:{0:"That is the most common and most expensive reaction. Each new application adds an inquiry to a file that already had a problem.",
+      1:"Fine. Fix the reason in the letter before anything else.",
+      3:"That is the right sequence. Let the change report, then reapply."}}
+ ]}
+];
+
+
+const $ = s => document.querySelector(s);
+const inner = $("#inner"), stream = $("#stream"), core = $("#core");
+const byId = id => KB.find(x => x.id === id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const RAILS = {
+  railCredit:["util","statement","azeo","scorefactors","inquiries","disputes","pullreports","rebuild","thinfile","au","oldaccounts","scoreranges"],
+  railStruct:["entity","naics","duns","businesscredit","net30","pg","mixing"],
+  railFund:["fundingtypes","sba","mca","underwriting","docs","denied","whenapply","grants","useoffunds","scams","order","timeline","askroom"]
+};
+Object.entries(RAILS).forEach(([host, ids]) => {
+  $("#"+host).innerHTML = ids.map(id => {
+    const e = byId(id); return e ? `<button class="railBtn" data-ask="${e.id}">${esc(e.t)}</button>` : "";
+  }).join("");
+});
+$("#flowList").innerHTML = FLOWS.map(f =>
+  `<button class="railBtn flow" data-flow="${f.id}">${esc(f.t)}<span>${esc(f.blurb)}</span></button>`).join("");
+
+const QUICK = ["order","denied","util","businesscredit","mca","scams","grants","whenapply"];
+$("#quick").innerHTML = QUICK.map(id => {
+  const e = byId(id); return `<button class="sug" data-ask="${id}">${esc(e.t)}</button>`;
+}).join("");
+
+/* ---- matching ---- */
+const STOP = new Set("a an and are as at be but by can do does for from get got how i if in is it my me of on or should that the their them there they this to was what when where which who why will with you your".split(" "));
+function tokens(s){
+  return s.toLowerCase().replace(/[^a-z0-9%\s]/g," ").split(/\s+/)
+    .filter(w => w && w.length > 1 && !STOP.has(w));
+}
+/* Inverse document frequency. A word that appears in one entry ("denied",
+   "paydex") identifies it. A word in half the entries ("credit", "business")
+   barely narrows anything, so it should not outvote the rare one. */
+const DF = (() => {
+  const df = {};
+  for (const e of KB){
+    const seen = new Set();
+    for (const k of e.k) for (const w of k.split(" ")) seen.add(w);
+    for (const w of e.t.toLowerCase().split(/[^a-z0-9]+/)) if (w) seen.add(w);
+    for (const w of seen) df[w] = (df[w] || 0) + 1;
+  }
+  return df;
+})();
+const idf = w => Math.log(1 + KB.length / (1 + (DF[w] || 0)));
+
+/* one-edit tolerance, so "buisness" still finds "business" */
+function near(a, b){
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  if (a.length < 5 || b.length < 5) return false;
+  let i = 0, j = 0, slips = 0;
+  while (i < a.length && j < b.length){
+    if (a[i] === b[j]){ i++; j++; continue; }
+    if (++slips > 1) return false;
+    if (a.length > b.length) i++;
+    else if (b.length > a.length) j++;
+    else { i++; j++; }
+  }
+  return slips + (a.length - i) + (b.length - j) <= 1;
+}
+
+function score(entry, q, toks){
+  let s = 0;
+  const titleWords = new Set(entry.t.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  const kwWords = new Set();
+  for (const k of entry.k) for (const w of k.split(" ")) kwWords.add(w);
+
+  // whole multi-word phrases present verbatim are a strong signal
+  for (const k of entry.k){
+    if (k.includes(" ") && q.includes(k)) s += 10 + 3 * k.split(" ").length;
+  }
+  for (const t of toks){
+    let hit = 0;
+    if (kwWords.has(t)) hit = 9;
+    else if (titleWords.has(t)) hit = 6;
+    else {
+      for (const w of kwWords){ if (near(t, w)) { hit = 6; break; } }
+      if (!hit) for (const w of titleWords){ if (near(t, w)) { hit = 4; break; } }
+    }
+    // cubed, so one distinctive word ("denied", "paydex") outweighs a pile
+    // of generic ones ("credit", "business") that match half the playbook
+    if (hit) s += hit * Math.pow(idf(t), 3);
+  }
+  return s;
+}
+function search(q){
+  const ql = q.toLowerCase(), toks = tokens(q);
+  if (!toks.length) return [];
+  return KB.map(e => ({e, s:score(e, ql, toks)}))
+           .filter(x => x.s > 0).sort((a,b) => b.s - a.s);
+}
+
+/* ---- rendering ---- */
+function scrollEnd(){ requestAnimationFrame(() => stream.scrollTop = stream.scrollHeight); }
+function addYou(text){
+  const d = document.createElement("div");
+  d.className = "msg you";
+  d.innerHTML = `<span>${esc(text)}</span>`;
+  inner.appendChild(d); scrollEnd();
+}
+function addSyn(html){
+  const d = document.createElement("div");
+  d.className = "msg syn";
+  d.innerHTML = `<svg class="synMark" viewBox="0 0 48 48" style="color:var(--green)"><use href="#synmark"/></svg>
+                 <div class="bubble">${html}</div>`;
+  inner.appendChild(d); scrollEnd();
+  return d.querySelector(".bubble");
+}
+function thinking(){
+  const b = addSyn(`<div class="dots"><i></i><i></i><i></i></div>`);
+  core.classList.add("busy");
+  return b;
+}
+function settle(bubble, html){
+  core.classList.remove("busy");
+  bubble.innerHTML = html; scrollEnd();
+}
+function followHtml(ids, label){
+  const live = (ids || []).map(byId).filter(Boolean);
+  if (!live.length) return "";
+  return `<div class="follow"><b>${label || "Keep going"}</b>` +
+    live.map(e => `<button class="sug" data-ask="${e.id}">${esc(e.t)}</button>`).join("") + `</div>`;
+}
+function answerHtml(e, alts){
+  return `<h2>${esc(e.t)}</h2>${e.a}` +
+         followHtml(e.next) +
+         (alts && alts.length ? followHtml(alts.map(x => x.id), "Also close to your question") : "");
+}
+
+function ask(text, fromId){
+  if (fromId){
+    const e = byId(fromId);
+    addYou(e.t);
+    const b = thinking();
+    setTimeout(() => settle(b, answerHtml(e)), 320);
+    return;
+  }
+  const q = text.trim();
+  if (!q) return;
+  addYou(q);
+  const b = thinking();
+  const hits = search(q);
+  setTimeout(() => {
+    if (!hits.length || hits[0].s < 6){
+      settle(b, `<h2>I do not have a written answer for that one</h2>
+        <p>SYN works from a playbook, so it only answers what has actually been written down and checked. That keeps it accurate, and it means there are gaps.</p>
+        <p><strong>Two things you can do:</strong> try rephrasing with the specific term you are after, or post the question in Ask The Syndicate. Real questions from members are what gets added to this playbook next.</p>
+        ${followHtml(["order","denied","fundingtypes","askroom"], "Common starting points")}`);
+      return;
+    }
+    settle(b, answerHtml(hits[0].e, hits.slice(1, 3).map(h => h.e)));
+  }, 340);
+}
+
+/* ---- diagnostics ---- */
+let flow = null;
+function startFlow(id){
+  const f = FLOWS.find(x => x.id === id);
+  if (!f) return;
+  flow = {f, i:0, answers:[]};
+  addYou(f.t);
+  const b = thinking();
+  setTimeout(() => { settle(b, `<h2>${esc(f.t)}</h2><p>${esc(f.blurb)} Nothing you pick is sent anywhere.</p>`); renderStep(); }, 300);
+}
+function renderStep(){
+  const {f, i} = flow;
+  const step = f.q[i];
+  const b = addSyn(`<div class="flowCard">
+      <div class="qn">Question ${i+1} of ${f.q.length}</div>
+      <div class="qt">${esc(step.q)}</div>
+      <div class="opts">${step.a.map((o, ix) =>
+        `<button class="opt" data-opt="${ix}">${esc(o.t)}</button>`).join("")}</div>
+      <div class="bar"><i style="width:${(i/f.q.length)*100}%"></i></div>
+    </div>`);
+  b.dataset.step = i;
+}
+function pick(ix){
+  const {f, i} = flow;
+  const step = f.q[i];
+  const chosen = step.a[ix];
+  flow.answers.push({q:step.q, v:chosen.v, label:chosen.t, note:step.f[chosen.v] || ""});
+  const card = inner.querySelector(`[data-step="${i}"]`);
+  if (card) card.innerHTML = `<p style="margin:0;color:var(--dim);font-size:13.5px">
+      <strong style="color:var(--text)">${esc(step.q)}</strong><br>${esc(chosen.t)}</p>`;
+  flow.i++;
+  if (flow.i < f.q.length){ renderStep(); }
+  else { finishFlow(); }
+}
+function finishFlow(){
+  const {f, answers} = flow;
+  const b = thinking();
+  const ranked = answers.map((a, ix) => ({...a, ix}))
+    .filter(a => a.note)
+    .sort((a, b2) => a.v - b2.v);
+  const cls = v => v === 0 ? "bad" : v === 1 ? "mid" : "ok";
+  const worst = ranked.filter(a => a.v <= 1);
+  setTimeout(() => {
+    settle(b, `<h2>Your readout</h2>
+      <p>${worst.length
+        ? `<strong>${worst.length} thing${worst.length>1?"s":""} ${worst.length>1?"are":"is"} working against you.</strong> They are listed worst first. Fix the top one before you do anything else, because the rest matter less until it is handled.`
+        : `<strong>Nothing here is obviously blocking you.</strong> That does not guarantee an approval, since lenders weigh things differently, but you do not have an obvious hole.`}</p>
+      <div class="verdict">${ranked.map(a =>
+        `<div class="vrow ${cls(a.v)}"><div><b>${esc(a.label)}</b><p>${esc(a.note)}</p></div></div>`).join("")}</div>
+      ${followHtml(f.id === "fundable" ? ["order","whenapply","docs","underwriting"] : ["denied","inquiries","underwriting","whenapply"], "Read next")}`);
+    flow = null;
+  }, 420);
+}
+
+/* ---- events ---- */
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-ask]");
+  if (a){ ask(null, a.dataset.ask); return; }
+  const fl = e.target.closest("[data-flow]");
+  if (fl){ startFlow(fl.dataset.flow); return; }
+  const op = e.target.closest("[data-opt]");
+  if (op && flow){ pick(+op.dataset.opt); return; }
+});
+const box = $("#box");
+function submit(){ const v = box.value; box.value = ""; box.style.height = "auto"; ask(v); }
+$("#send").addEventListener("click", submit);
+box.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); submit(); }
+});
+box.addEventListener("input", () => {
+  box.style.height = "auto";
+  box.style.height = Math.min(box.scrollHeight, 140) + "px";
+});
+
+function greet(){
+  inner.innerHTML = "";
+  addSyn(`<h2>Ask me anything about credit, structure or funding</h2>
+    <p>I am SYN. I answer from a written playbook covering personal credit, credit repair, entity setup, business credit, and every realistic way a small business gets capital.</p>
+    <p>Ask in your own words. "Why did I get denied", "how do I build business credit with no money", "is this offer a scam", "what order do I do this in". If I do not have it written down I will say so rather than make something up.</p>
+    <p>There are also two diagnostics in the menu that ask you a few questions and tell you what is actually blocking you.</p>
+    ${followHtml(["order","denied","util","fundingtypes"], "Try one of these")}`);
+}
+$("#resetBtn").addEventListener("click", () => { flow = null; greet(); });
+
+const tb = $("#themeBtn");
+const KEY = "syn-theme";
+function applyTheme(t){
+  if (t) document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+  const dark = t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches);
+  tb.textContent = dark ? "Light" : "Dark";
+}
+let theme = null; try { theme = localStorage.getItem(KEY); } catch(e){}
+applyTheme(theme);
+tb.addEventListener("click", () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark"
+    || (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  theme = dark ? "light" : "dark";
+  try { localStorage.setItem(KEY, theme); } catch(e){}
+  applyTheme(theme);
+});
+
+greet();
+</script>
+</body>
+</html>
