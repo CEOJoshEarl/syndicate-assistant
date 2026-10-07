@@ -178,6 +178,41 @@ textarea::placeholder{color:var(--faint)}
   .topTxt p{display:none}
 }
 
+/* ambient field */
+#field{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+.app{position:relative;z-index:1}
+
+/* boot */
+#boot{
+  position:fixed;inset:0;z-index:40;background:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  transition:opacity .45s ease;
+}
+#boot.gone{opacity:0;pointer-events:none}
+#bootLines{
+  font:400 12px/1.9 JetBrains Mono,monospace;color:var(--faint);
+  width:min(330px,76vw);
+}
+#bootLines div{opacity:0;animation:bootIn .25s ease forwards}
+#bootLines b{color:var(--green);font-weight:500}
+@keyframes bootIn{to{opacity:1}}
+
+/* hero core */
+.hero{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0 26px}
+canvas.core3d{display:block}
+.status{
+  font:500 10.5px/1 JetBrains Mono,monospace;letter-spacing:.2em;color:var(--faint);
+  display:flex;align-items:center;gap:8px;text-transform:uppercase;
+}
+.status i{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.status.busy i{animation:bl 1s infinite}
+.heroCap{font:400 13px/1.5 Inter,sans-serif;color:var(--dim);text-align:center;max-width:46ch}
+
+/* streamed reveal */
+.tw{border-right:2px solid var(--green);padding-right:2px}
+.rv{opacity:0;transform:translateY(5px);transition:opacity .3s ease,transform .3s ease}
+.rv.on{opacity:1;transform:none}
+
 /* core animation */
 .ring{transform-origin:50% 50%;animation:spin 14s linear infinite}
 .ring2{animation:spin 9s linear infinite reverse}
@@ -199,6 +234,13 @@ textarea::placeholder{color:var(--faint)}
   <circle class="core" cx="24" cy="24" r="5.5" fill="currentColor"/>
 </g>
 </defs></svg>
+
+<canvas id="field" aria-hidden="true"></canvas>
+
+<div id="boot" aria-hidden="true">
+  <canvas id="bootCore" width="150" height="150" class="core3d"></canvas>
+  <div id="bootLines"></div>
+</div>
 
 <div class="app">
   <aside class="rail">
@@ -228,7 +270,7 @@ textarea::placeholder{color:var(--faint)}
 
   <main class="main">
     <div class="top">
-      <svg class="coreWrap" id="core" viewBox="0 0 48 48" style="color:var(--green)"><use href="#synmark"/></svg>
+      <canvas class="coreWrap core3d" id="core" width="92" height="92" aria-hidden="true"></canvas>
       <div class="topTxt">
         <h1>SYN</h1>
         <p>Credit, structure and funding. Ask in your own words.</p>
@@ -729,6 +771,139 @@ const FLOWS = [
 
 
 const $ = s => document.querySelector(s);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------------------------------------------------------------
+   The core. One engine, drawn into however many canvases exist.
+   State drives speed, brightness and whether the waveform shows,
+   so the thing visibly reacts to what the member is doing.
+   --------------------------------------------------------------- */
+const CORE = {
+  state: "standby",           // standby | listening | thinking | responding
+  t: 0,
+  targets: [],
+  css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); },
+  add(cv){
+    if (!cv) return;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = cv.width, h = cv.height;
+    cv.width = w * dpr; cv.height = h * dpr;
+    cv.style.width = w + "px"; cv.style.height = h + "px";
+    const ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+    this.targets.push({cv, ctx, w, h});
+  },
+  set(st){ this.state = st; const s = $("#status"); if (s){
+    s.firstElementChild.nextSibling.textContent = " " + ({
+      standby:"standby", listening:"listening", thinking:"processing", responding:"responding"
+    })[st];
+    s.classList.toggle("busy", st === "thinking" || st === "responding");
+  }},
+  draw(){
+    const g = this.css("--green") || "#35D17E";
+    const m = this.css("--mint")  || "#6FF0B4";
+    const b = this.css("--blue")  || "#5AA9F0";
+    const busy = this.state === "thinking";
+    const live = this.state === "listening" || this.state === "responding";
+    const spd = busy ? 3.1 : live ? 1.6 : 1;
+    this.t += 0.016 * spd;
+    const t = this.t;
+
+    for (const {ctx, w, h} of this.targets){
+      const cx = w/2, cy = h/2, R = Math.min(w,h)/2;
+      ctx.clearRect(0,0,w,h);
+
+      // outer arc ring
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(t*0.55);
+      ctx.strokeStyle = g; ctx.globalAlpha = busy ? .95 : .6;
+      ctx.lineWidth = Math.max(1, R*0.035); ctx.lineCap = "round";
+      for (let i=0;i<3;i++){
+        const a0 = i*(Math.PI*2/3), a1 = a0 + (busy ? 1.5 : 1.15);
+        ctx.beginPath(); ctx.arc(0,0,R*0.86,a0,a1); ctx.stroke();
+      }
+      ctx.restore();
+
+      // inner counter ring
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(-t*0.95);
+      ctx.strokeStyle = m; ctx.globalAlpha = busy ? .9 : .45;
+      ctx.lineWidth = Math.max(1, R*0.028);
+      for (let i=0;i<2;i++){
+        const a0 = i*Math.PI, a1 = a0 + 1.9;
+        ctx.beginPath(); ctx.arc(0,0,R*0.62,a0,a1); ctx.stroke();
+      }
+      ctx.restore();
+
+      // orbiting motes
+      ctx.save(); ctx.translate(cx,cy);
+      const n = R > 50 ? 16 : 8;
+      for (let i=0;i<n;i++){
+        const a = t*0.7 + i*(Math.PI*2/n);
+        const rr = R*(0.72 + 0.08*Math.sin(t*1.5 + i));
+        ctx.globalAlpha = .25 + .45*Math.abs(Math.sin(t + i));
+        ctx.fillStyle = i % 5 === 0 ? b : g;
+        ctx.beginPath(); ctx.arc(Math.cos(a)*rr, Math.sin(a)*rr, Math.max(.8, R*0.022), 0, 7); ctx.fill();
+      }
+      ctx.restore();
+
+      // listening waveform
+      if (live && R > 40){
+        ctx.save(); ctx.translate(cx,cy);
+        ctx.strokeStyle = m; ctx.globalAlpha = .7; ctx.lineWidth = Math.max(1, R*0.022);
+        ctx.beginPath();
+        for (let x=-R*0.46; x<=R*0.46; x+=2){
+          const k = x/(R*0.46);
+          const amp = R*0.2*(1-k*k)*Math.sin(t*6 + k*7);
+          x === -R*0.46 ? ctx.moveTo(x, amp) : ctx.lineTo(x, amp);
+        }
+        ctx.stroke(); ctx.restore();
+      }
+
+      // core
+      const pr = R*(0.2 + 0.035*Math.sin(t*2.2)) * (busy ? 1.12 : 1);
+      const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,pr*2.6);
+      grad.addColorStop(0, m); grad.addColorStop(.42, g); grad.addColorStop(1, "transparent");
+      ctx.globalAlpha = busy ? 1 : .88;
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(cx,cy,pr*2.6,0,7); ctx.fill();
+      ctx.globalAlpha = 1; ctx.fillStyle = m;
+      ctx.beginPath(); ctx.arc(cx,cy,pr*0.55,0,7); ctx.fill();
+    }
+  }
+};
+
+/* drifting ambient field behind everything */
+const FIELD = (() => {
+  const cv = $("#field"); if (!cv) return {draw(){}};
+  const ctx = cv.getContext("2d");
+  let pts = [], w = 0, h = 0, dpr = Math.min(devicePixelRatio || 1, 2);
+  function size(){
+    w = innerWidth; h = innerHeight;
+    cv.width = w*dpr; cv.height = h*dpr; cv.style.width = w+"px"; cv.style.height = h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n = Math.round(Math.min(70, (w*h)/26000));
+    pts = Array.from({length:n}, () => ({
+      x:Math.random()*w, y:Math.random()*h,
+      vx:(Math.random()-.5)*.12, vy:(Math.random()-.5)*.12,
+      r:Math.random()*1.5+.4
+    }));
+  }
+  addEventListener("resize", size); size();
+  return { draw(){
+    const g = CORE.css("--green") || "#35D17E";
+    ctx.clearRect(0,0,w,h);
+    const fast = CORE.state === "thinking" ? 3 : 1;
+    for (const p of pts){
+      p.x += p.vx*fast; p.y += p.vy*fast;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.globalAlpha = .22; ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+    }
+  }};
+})();
+
+function loop(){ CORE.draw(); FIELD.draw(); requestAnimationFrame(loop); }
+
 const inner = $("#inner"), stream = $("#stream"), core = $("#core");
 const byId = id => KB.find(x => x.id === id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -837,12 +1012,46 @@ function addSyn(html){
 }
 function thinking(){
   const b = addSyn(`<div class="dots"><i></i><i></i><i></i></div>`);
-  core.classList.add("busy");
+  CORE.set("thinking");
   return b;
 }
+/* Answers arrive the way an assistant answers: the heading types itself,
+   then each block lands in turn. Static HTML appearing all at once is the
+   thing that makes a bot feel like a web page. */
 function settle(bubble, html){
-  core.classList.remove("busy");
-  bubble.innerHTML = html; scrollEnd();
+  CORE.set("responding");
+  bubble.innerHTML = html;
+  const kids = [...bubble.children];
+  const head = kids[0] && kids[0].tagName === "H2" ? kids[0] : null;
+  const rest = head ? kids.slice(1) : kids;
+  rest.forEach(k => k.classList.add("rv"));
+
+  const done = () => {
+    CORE.set(document.activeElement === box ? "listening" : "standby");
+  };
+  const runRest = () => {
+    if (REDUCED){ rest.forEach(k => k.classList.add("on")); done(); scrollEnd(); return; }
+    let i = 0;
+    const step = () => {
+      if (i >= rest.length){ done(); scrollEnd(); return; }
+      rest[i].classList.add("on"); i++;
+      scrollEnd();
+      setTimeout(step, 85);
+    };
+    step();
+  };
+
+  if (!head || REDUCED){ if (head) head.textContent = head.textContent; runRest(); scrollEnd(); return; }
+  const full = head.textContent;
+  head.textContent = ""; head.classList.add("tw");
+  let i = 0;
+  const type = () => {
+    head.textContent = full.slice(0, ++i);
+    scrollEnd();
+    if (i < full.length) setTimeout(type, 16);
+    else { head.classList.remove("tw"); runRest(); }
+  };
+  type();
 }
 function followHtml(ids, label){
   const live = (ids || []).map(byId).filter(Boolean);
@@ -950,6 +1159,8 @@ $("#send").addEventListener("click", submit);
 box.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); submit(); }
 });
+box.addEventListener("focus", () => { if (CORE.state === "standby") CORE.set("listening"); });
+box.addEventListener("blur", () => { if (CORE.state === "listening") CORE.set("standby"); });
 box.addEventListener("input", () => {
   box.style.height = "auto";
   box.style.height = Math.min(box.scrollHeight, 140) + "px";
@@ -957,6 +1168,15 @@ box.addEventListener("input", () => {
 
 function greet(){
   inner.innerHTML = "";
+  const hero = document.createElement("div");
+  hero.className = "hero";
+  hero.innerHTML = `<canvas class="core3d" id="heroCore" width="168" height="168" aria-hidden="true"></canvas>
+    <div class="status" id="status"><i></i> standby</div>
+    <p class="heroCap">Online and listening. Ask in your own words.</p>`;
+  inner.appendChild(hero);
+  CORE.targets = [];
+  CORE.add($("#core")); CORE.add($("#heroCore"));
+  CORE.set("standby");
   addSyn(`<h2>Ask me anything about credit, structure or funding</h2>
     <p>I am SYN. I answer from a written playbook covering personal credit, credit repair, entity setup, business credit, and every realistic way a small business gets capital.</p>
     <p>Ask in your own words. "Why did I get denied", "how do I build business credit with no money", "is this offer a scam", "what order do I do this in". If I do not have it written down I will say so rather than make something up.</p>
@@ -983,7 +1203,35 @@ tb.addEventListener("click", () => {
   applyTheme(theme);
 });
 
-greet();
+/* ---- boot ---- */
+const BOOT = [
+  "initialising syn core",
+  "loading playbook <b>36 entries</b>",
+  "credit · structure · funding",
+  "<b>online</b>"
+];
+function boot(){
+  const host = $("#bootLines");
+  CORE.add($("#bootCore"));
+  CORE.set("thinking");
+  loop();
+  if (REDUCED){ finishBoot(); return; }
+  BOOT.forEach((line, i) => {
+    setTimeout(() => {
+      const d = document.createElement("div");
+      d.innerHTML = "> " + line;
+      host.appendChild(d);
+    }, 170 * i);
+  });
+  setTimeout(finishBoot, 170 * BOOT.length + 480);
+}
+function finishBoot(){
+  const b = $("#boot");
+  b.classList.add("gone");
+  setTimeout(() => b.remove(), 500);
+  greet();
+}
+boot();
 </script>
 </body>
 </html>
